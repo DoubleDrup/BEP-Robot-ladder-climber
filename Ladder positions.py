@@ -7,16 +7,16 @@ from Plot_functions import plot_vec
 ########################################################################################################################
 # Robot dimensions
 arm_lenght = 0.35
-body_width = 0.30
-body_height = 0.60
+body_width = 0.50
+body_height = 1
 grip_offset = 0.05       # Distance from body to hand/feet position on ladder in x direction
 dist_ladder = 0.2
 max_arm_tol = 0.02      # Prevent full stretch of arms
 
 # Ladder dimensions
 sport_dist = 0.25
-sport_width = 0.50
-ladder_height = 3
+sport_width = 0.70
+ladder_height = 6
 
 # Plot settings
 space_ladder = 0.1
@@ -40,23 +40,28 @@ def body_corners(cog):
 
 def closest_sport_above_below(point):
     sh = sport_heights()
-    aboves = [sport-point[1] for sport in sh if sport-point[1] > 0]
-    belows = [sport-point[1] for sport in sh if sport-point[1] < 0]
+    aboves = [sport for sport in sh if sport-point[1] > 0]
+    belows = [sport for sport in sh if sport-point[1] < 0]
+    print(f"aboves {aboves}")
+    print(f"belows {belows}")
     if aboves:
         above = min(aboves)
     else:
-        above = None
+        above = max(belows)
     if belows:
         below = max(belows)
     else:
-        below = None
+        below = min(aboves)
+    print(f"corner: {point}, above {above}, below {below}")
     return above, below
 
 def start_pos():
     x_left, x_right = -(grip_offset + body_width/2), grip_offset + body_width/2
-    dist_xy = (arm_lenght*2)**2 - dist_ladder**2
-    dist_y = dist_xy**2 - grip_offset**2
-    cog = np.array([0, dist_y+body_height/2-max_arm_tol, dist_ladder])
+    dist_xy = np.sqrt((arm_lenght*2)**2 - dist_ladder**2)
+    print(dist_xy)
+    dist_y = np.sqrt(dist_xy**2 - grip_offset**2)
+    print(dist_y)
+    cog = np.array([0, dist_y+body_height/2-max_arm_tol-ladder_height/2, dist_ladder])
     bc = body_corners(cog)
     left_up_hand = np.array([x_left, closest_sport_above_below(bc[0])[0], 0])
     right_up_hand = np.array([x_right, closest_sport_above_below(bc[1]+dist_y)[1], 0])
@@ -76,16 +81,16 @@ def plot_ladder(plot):
 
 def plot_body(plot, cog):
     corners = body_corners(cog)
-    plot.plot(cog[0], cog[1], color='red', marker = 'o')
+    plot.plot(cog[0], cog[1], color='orange', marker = 'o')
     for i in range(len(corners)):
         if i != len(corners)-1:
-            plot_vec(plot, corners[i], corners[i+1]-corners[i])
+            plot_vec(plot, corners[i], corners[i+1]-corners[i],color="orange")
         else:
-            plot_vec(plot, corners[i], corners[0]-corners[i])
+            plot_vec(plot, corners[i], corners[0]-corners[i],color="orange")
 
 def plot_arms(plot, corners, hands):
-    for i in range(len(corners)):
-        plot_vec(plot, corners[i], hands[i] - corners[i])
+    for i in range(len(hands)):
+        plot_vec(plot, corners[i], hands[i] - corners[i], color="y")
 
 
 
@@ -102,10 +107,10 @@ fig, ax = plt.subplots(figsize = (5,5))
 ax.set_xlim([-(sport_width/2+space_ladder), sport_width/2+space_ladder])
 ax.set_ylim([-(ladder_height/2), ladder_height/2])
 ax.set_aspect('equal')
-ax.set_title('Free body diagram of ladder climber')
+ax.set_title('Ladder climber')
 # ax.grid()
 plot_ladder(ax)
-print(start_pos())
+
 cog, corners, hands = start_pos()
 plot_body(ax, cog)
 plot_arms(ax, corners, hands)
