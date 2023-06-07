@@ -7,7 +7,7 @@ from Plot_functions import plot_vec
 ########################################################################################################################
 # Robot dimensions
 arm_lenght = 0.35
-body_width = 0.50
+body_width = 0.2
 body_height = 1
 grip_offset = 0.05       # Distance from body to hand/feet position on ladder in x direction
 dist_ladder = 0.2
@@ -15,7 +15,7 @@ max_arm_tol = 0.02      # Prevent full stretch of arms
 
 # Ladder dimensions
 sport_dist = 0.25
-sport_width = 0.70
+sport_width = 1
 ladder_height = 6
 
 # Plot settings
