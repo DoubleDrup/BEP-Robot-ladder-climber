@@ -1,57 +1,73 @@
 import numpy as np
 import math
-from Math import roty
+from Math import roty, rotz
+import matplotlib.pyplot as plt
 
-def stable_length(w_out, w_ball, r, d):
-    l_stable = math.sqrt((r - d)**2+(w_ball - w_out)**2)
-    return l_stable
+r_arm = 0.040 #0.020
+r_hook = 0.030 #0.015
+dist = 0.045 #0.020
 
-def length_angle(w_out, w_ball, r, d, angle):
-    a_stable = math.atan(w_ball/d)
-    print(f'\na_stable = {a_stable*180/math.pi}')
-    a1 = a_stable + angle
-    print(f'a1 = {a1*180/math.pi}')
-    d2 = np.sqrt(d **2 + w_ball **2)
-    print(f'd2 = {d2}')
-    d1 = d2 * np.cos(a1)
-    print(f'd1 = {d1}')
-    d3 = d2 * np.sin(a1)
-    print(f'd3 = {d3}')
-    r2 = r - d1
-    print(f'r2 = {r2}')
-    r3 = d3 - w_out
-    print(f'r3 = {r3}')
-    l_angle = math.sqrt(r3 **2 + r2 **2)
-    return l_angle
 
-def rotation_lenght(r_big, r_small, dist, angle):
-    v1 = np.array([r_big, 0, 0])
-    v2 = roty(angle)@np.array([r_small, 0, 0])
-    v3 = v1 - v2 + np.array([0,0,dist])
-    length = np.linalg.norm(v3)
+d = 0.0075
+r = dist + d
 
+def cable_length_rotz(angle, r_arm=r_arm, r_hook=r_hook, r=r, d=d):
+    v1 = rotz(angle)@np.array([r_hook, r, r_arm-r_hook])
+    v2 = np.array([r_arm, d, 0])
+    v3 = v1 - v2
+    return np.linalg.norm(v3)
+
+def extension_rotz(angle_deg):
+    angle0 = cable_length_rotz(0)
+    angle = cable_length_rotz(angle_deg * np.pi / 180)
+    extension = abs(angle - angle0)
+    # print(f"length at 0 degrees = {angle0*1000} mm")
+    # print(f"length at {angle_deg} degrees = {angle*1000} mm")
+    # print(f"Extension = {extension*1000} mm")
+    return extension
+
+def cable_length_roty(angle, r_arm=r_arm, r_hook=r_hook, dist=dist):
+    v4 = np.array([r_arm, 0, 0])
+    v5 = roty(angle)@np.array([r_hook, 0, 0])
+    v6 = v4 - v5 + np.array([0,dist,0])
+    length = np.linalg.norm(v6)
+    # print(f"V5: {v5}")
+    # print(f"V6: {v6}")
+    # print(f"angle: {angle}, length: {length}")
     return length
+# print(cable_length_roty(15))
+# print(cable_length_roty(-15))
 
-def calculate_length_rotation(r_big, r_small, dist, angle_deg):
-    angle0 = rotation_lenght(r_big, r_small, dist, 0)
-    angle = rotation_lenght(r_big, r_small, dist, angle_deg*np.pi/180)
-    print(f"length at 0 degrees = {angle0}")
-    print(f"length at {angle_deg} degrees = {angle}")
-    print(f"Extension = {angle - angle0}")
+def extension_roty(angle_deg):
+    angle0 = cable_length_roty(0)
+    angle = cable_length_roty(angle_deg * np.pi / 180)
+    extension = abs(angle - angle0)
+    # print(f"length at 0 degrees = {angle0*1000} mm")
+    # print(f"length at {angle_deg} degrees = {angle*1000} mm")
+    # print(f"Extension = {extension*1000} mm")
+    return extension
 
-angle = 15
-r_big = 2.5
-r_small = 0.5
-dist = 2
-
-calculate_length_rotation(r_big,r_small,dist,angle)
-w_out = 2
-w_ball = 3
-r = 3
-d = 0.5
+angles = np.arange(-60,60,0.5)
+extensions_roty = np.zeros(len(angles))
+extensions_rotz = np.zeros(len(angles))
 
 
-# print(f"Angle = {angle*360/(2*math.pi)}")
+
+for i in range(len(angles)):
+    extensions_roty[i] = extension_roty(angles[i])
+    extensions_rotz[i] = extension_rotz(angles[i])
+
+angle = 12 #deg
+print(f"The maximum angle for the pin to enter the ball is {angle} degrees:")
+print(f"    maximum extension of cables with a {angle} deg rotation about z (left-right):   {round(extension_rotz(angle)*1000,1)} mm")
+print(f"    maximum extension of cables with a {angle} deg rotation about y (up-down):   {round(extension_roty(angle)*1000,1)} mm")
+print(f"    maximum extension of cables with a {-angle} deg rotation about z (left-right):   {round(extension_rotz(-angle)*1000,1)} mm")
+print(f"    maximum extension of cables with a {-angle} deg rotation about y (up-down):   {round(extension_roty(-angle)*1000,1)} mm")
+
+
 # print(f"Stable length = {stable_length(w_out,w_ball,r,d)}")
 # print(f"Length at angle = {length_angle(w_out, w_ball, r, d, angle)}")
-# print(f"Cable extension = {angle}")
+plt.plot(angles, extensions_roty, label="Rotation up down")
+plt.plot(angles, extensions_rotz, label="Rotation left right")
+plt.legend()
+plt.show()
