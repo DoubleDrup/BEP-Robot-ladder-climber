@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from Math import rotzyx
-from Plot_functions import plot_vec
+from Plot_functions import plot_vecxy
 
 ########################################################################################################################
 # Robot dimensions
@@ -74,9 +74,9 @@ def start_pos():
 def plot_ladder(plot):
     heights = sport_heights()
     for height in heights:
-        plot_vec(plot, [-sport_width/2, height, 0], [sport_width,0,0])
-    plot_vec(plot, [-sport_width/2,-ladder_height/2,0], [0,ladder_height,0])
-    plot_vec(plot, [sport_width / 2, -ladder_height / 2, 0], [0, ladder_height, 0])
+        plot_vecxy(plot, [-sport_width / 2, height, 0], [sport_width, 0, 0])
+    plot_vecxy(plot, [-sport_width / 2, -ladder_height / 2, 0], [0, ladder_height, 0])
+    plot_vecxy(plot, [sport_width / 2, -ladder_height / 2, 0], [0, ladder_height, 0])
 
 
 def plot_body(plot, cog):
@@ -84,13 +84,13 @@ def plot_body(plot, cog):
     plot.plot(cog[0], cog[1], color='orange', marker = 'o')
     for i in range(len(corners)):
         if i != len(corners)-1:
-            plot_vec(plot, corners[i], corners[i+1]-corners[i],color="orange")
+            plot_vecxy(plot, corners[i], corners[i + 1] - corners[i], color="orange")
         else:
-            plot_vec(plot, corners[i], corners[0]-corners[i],color="orange")
+            plot_vecxy(plot, corners[i], corners[0] - corners[i], color="orange")
 
 def plot_arms(plot, corners, hands):
     for i in range(len(hands)):
-        plot_vec(plot, corners[i], hands[i] - corners[i], color="y")
+        plot_vecxy(plot, corners[i], hands[i] - corners[i], color="y")
 
 
 
