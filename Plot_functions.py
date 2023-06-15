@@ -28,6 +28,11 @@ def plot_vecyz(plot_name, base_vec, direction_vec, color="black"):
 
     plot_name.plot(x,y,color=color)
 
+def plot_vecxyz(plotname_xz, plotname_yz, plotname_xy, base_vec, direction_vec, color="black"):
+    plot_vecxz(plotname_xz, base_vec,direction_vec, color=color)
+    plot_vecyz(plotname_yz, base_vec,direction_vec, color=color)
+    plot_vecxy(plotname_xy, base_vec,direction_vec, color=color)
+
 # fig, ax = plt.subplots(figsize = (5,5))
 # plot_vecxy(ax, np.array([0,0,0]), np.array([1,1,0]))
 # plt.show()
