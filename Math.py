@@ -66,3 +66,4 @@ def solve_soe(eq):
             if term[0] == '(':
                 vec.append(np.array([float(x) for x in term[1:-1].split(',')]))
         vecs.append(vec)
+

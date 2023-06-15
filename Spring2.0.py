@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Math import rotzyx
 from Plot_functions import *
-from sympy import Symbol, Matrix, solve
+from sympy import Symbol, Matrix, solve, symbols, linsolve
 
 k = Symbol('k')
+x,y,z = symbols('x, y, z')
 h_cor = 0.05
 d_spring = 0.035
 
@@ -87,7 +88,7 @@ def calculate_moments_springs(angle, pre_tension):
     return moments_springs
 def calculate_Fg(angle):
     return rotzyx(Fg, angle, angle, angle)
-def calculate_friction_force_moment_and_PoC(angle, pre_tension, c_friction):
+def calculate_friction_force(angle, pre_tension, c_friction):
     spring_forces, mags = calculate_spring_forces(angle, pre_tension)
     # print(f"spring forces : {spring_forces}")
     sum = Matrix([[0],[0],[0]])
@@ -96,11 +97,9 @@ def calculate_friction_force_moment_and_PoC(angle, pre_tension, c_friction):
         sum += i
     N = (-sum - Matrix(calculate_Fg(angle)))/(1+c_friction)
     # print(f"N = {N}")
-    N_dir = N/(N[0]**2 + N[1]**2 + N[2]**2)**(1/2)
-    cor_PoC = N_dir * r_ball
-    F_fric = N*c_friction
-    M_fric = cor_PoC.cross(F_fric)
-    return F_fric, M_fric, cor_PoC
+    N_len = (N[0]**2 + N[1]**2 + N[2]**2)**(1/2)
+    F_fric = N_len*c_friction
+    return F_fric
 
 def calculate_moment_gravity(angle):
     Fg_rot = Matrix(calculate_Fg(angle))
@@ -108,31 +107,34 @@ def calculate_moment_gravity(angle):
     return r_g.cross(Fg_rot)
 
 def solve_equation(angle, pre_tension, c_friction):
+    spring_forces, mags = calculate_spring_forces(angle, pre_tension)
+    Fg = Matrix(calculate_Fg(angle))
     M_springs = calculate_moments_springs(angle, pre_tension)
-    F_fric, M_friction, cor_PoC = calculate_friction_force_moment_and_PoC(angle, pre_tension, c_friction)
+    F_fric = calculate_friction_force(angle, pre_tension, c_friction)
     M_grav = calculate_moment_gravity(angle)
-    sum_m = M_friction + M_grav
+    sum_m = M_grav  #+ M_friction
+    sum_f = Fg
     # print(M_springs)
-    for i in M_springs:
-        sum_m += i
+    for i in range(len(M_springs)):
+        sum_m += M_springs[i]
+        sum_f += spring_forces[i]
 
     print(sum_m)
-    print(sum_m[0])
-    ks = np.linspace(1,1000,1000)
-    solutions0 = []
-    solutions1 = []
-    solutions2 = []
-    for i in ks:
-        solutions0.append(sum_m[0].subs(k, i))
-        solutions1.append(sum_m[1].subs(k, i))
-        solutions2.append(sum_m[2].subs(k, i))
-    plt.plot(ks,solutions0)
-    plt.plot(ks,solutions1)
-    plt.plot(ks, solutions2)
-    plt.show()
+    print(sum_f)
+    r_unknown = Matrix([x, y, z])
+    m_unknown = r_unknown.cross(-sum_f)
+    sum0 = m_unknown - sum_m
+    print(m_unknown)
+
+    r_known = linsolve([sum0[0], sum0[1], sum0[2]],x,y,z)
+    lijst = []
+    for i in r_known:
+        for x in i:
+            lijst.append(x)
+    mat
+    print(r_known)
 
 solve_equation(12,1,0.5)
-
 
 
 def plot_at_max_angle(angle, pre_tension, c_friction):
@@ -150,7 +152,7 @@ def plot_at_max_angle(angle, pre_tension, c_friction):
     Fg_rot = calculate_Fg(angle)
     cor_knots = calculate_cor_knots(angle)
     springs = calculate_springs(angle)
-    F_fric, M_fric, cor_PoC = calculate_friction_force_moment_and_PoC(angle, pre_tension, c_friction)
+    F_fric = calculate_friction_force(angle, pre_tension, c_friction)
 
     plot_vecxyz(xz, yz, xy, o_cor, cor_spring_claw)
     plot_vecxyz(xz, yz, xy, o_cor, -cor_spring_claw)
