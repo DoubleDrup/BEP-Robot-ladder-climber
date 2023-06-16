@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Math import rotzyx
 from Plot_functions import *
-from sympy import Symbol, Matrix, solve, symbols, linsolve
+from sympy import Symbol, Matrix, solve, symbols, linsolve, sqrt
 
 k = Symbol('k')
 x,y,z = symbols('x, y, z')
@@ -28,10 +28,10 @@ cor_knot_claw_left = np.array([0, -d_spring, h_knot_upper])
 o_knot = o_cor + cor_knot_wrist_right
 
 def calculate_cor_knots(angle):
-    cor_knot1 = rotzyx(cor_knot_wrist_right, angle, angle, angle)
-    cor_knot2 = rotzyx(cor_knot_wrist_left, angle, angle, angle)
-    cor_knot3 = rotzyx(cor_knot_claw_right, angle, angle, angle)
-    cor_knot4 = rotzyx(cor_knot_claw_left, angle, angle, angle)
+    cor_knot1 = rotzyx(cor_knot_wrist_right, 0, angle, angle)
+    cor_knot2 = rotzyx(cor_knot_wrist_left, 0, angle, angle)
+    cor_knot3 = rotzyx(cor_knot_claw_right, 0, angle, angle)
+    cor_knot4 = rotzyx(cor_knot_claw_left, 0, angle, angle)
     return np.array([cor_knot1, cor_knot2, cor_knot3, cor_knot4])
 
 def calculate_springs(angle):
@@ -49,7 +49,7 @@ def calculate_spring_extensions_directions(angle):
     directions = np.zeros((len(springs0), 3))
     for i in range(len(springs0)):
         extensions[i] = np.linalg.norm(springs0[i]) - np.linalg.norm(springs_angle[i])
-        directions[i] = springs_angle[i] / np.linalg.norm(springs_angle[i])
+        directions[i] = -springs_angle[i] / np.linalg.norm(springs_angle[i])
 
     return extensions, directions
 
@@ -70,7 +70,7 @@ def calculate_spring_forces(angle, pre_tension):
 
         spring_forces.append(spring_force)
         mags.append(mag)
-
+    # print(f"spring forces:  {spring_forces}")
     return spring_forces, mags
 
 def calculate_moments_springs(angle, pre_tension):
@@ -83,11 +83,11 @@ def calculate_moments_springs(angle, pre_tension):
         # print(f"##### Spring {i} #####")
         # print(f"Arm of spring = {cor_knots[i]}")
         # print(f"Force of spring = {spring_forces[i]}")
-        # print(f"Moment of spring = {moment_spring}")
+        # # print(f"Moment of spring = {moment_spring}")
     # print(moments_springs)
     return moments_springs
 def calculate_Fg(angle):
-    return rotzyx(Fg, angle, angle, angle)
+    return rotzyx(Fg, angle, 0, 0)
 def calculate_friction_force(angle, pre_tension, c_friction):
     spring_forces, mags = calculate_spring_forces(angle, pre_tension)
     # print(f"spring forces : {spring_forces}")
@@ -103,22 +103,21 @@ def calculate_friction_force(angle, pre_tension, c_friction):
 
 def calculate_moment_gravity(angle):
     Fg_rot = Matrix(calculate_Fg(angle))
-    r_g = Matrix(rotzyx(cor_CoM,angle,angle,angle))
+    r_g = Matrix(rotzyx(cor_CoM,0, angle, angle))
     return r_g.cross(Fg_rot)
 
 def solve_equation(angle, pre_tension, c_friction):
     spring_forces, mags = calculate_spring_forces(angle, pre_tension)
     Fg = Matrix(calculate_Fg(angle))
     M_springs = calculate_moments_springs(angle, pre_tension)
-    F_fric = calculate_friction_force(angle, pre_tension, c_friction)
     M_grav = calculate_moment_gravity(angle)
-    sum_m = M_grav  #+ M_friction
+    sum_m = M_grav
     sum_f = Fg
     # print(M_springs)
     for i in range(len(M_springs)):
         sum_m += M_springs[i]
         sum_f += spring_forces[i]
-
+    print(f"spring_forces : {spring_forces}")
     print(sum_m)
     print(sum_f)
     r_unknown = Matrix([x, y, z])
@@ -126,15 +125,28 @@ def solve_equation(angle, pre_tension, c_friction):
     sum0 = m_unknown - sum_m
     print(m_unknown)
 
-    r_known = linsolve([sum0[0], sum0[1], sum0[2]],x,y,z)
-    lijst = []
-    for i in r_known:
-        for x in i:
-            lijst.append(x)
-    mat
-    print(r_known)
+    r_known_unreadable = linsolve([sum0[0], sum0[1], sum0[2]],(x,y,z))
+    x_r_known,y_r_known,z_r_known = r_known_unreadable.args[0]
+    r_len = sqrt(x_r_known**2 + y_r_known**2 + z_r_known**2)
+    # k_calculated = solve(r_len-r_ball, k)
 
-solve_equation(12,1,0.5)
+    ks = np.linspace(0,1000, 100)
+    rs = np.zeros(len(ks))
+    for i in range(len(ks)):
+        rs[i] = r_len.subs(k, ks[i])
+    plt.plot(ks, rs)
+    plt.show()
+
+    print(f"r_known = {r_known_unreadable}")
+    print(f"x_r_known = {x_r_known}")
+    print(f"y_r_known = {y_r_known}")
+    print(f"z_r_known = {z_r_known}")
+    print(f"r_len = {r_len}")
+    # print(f"k calculated = {k_calculated}")
+
+
+
+solve_equation(12*np.pi/180,10,0.5)
 
 
 def plot_at_max_angle(angle, pre_tension, c_friction):
@@ -148,11 +160,19 @@ def plot_at_max_angle(angle, pre_tension, c_friction):
     xy.set_aspect('equal')
     xy.set_title(f'wrist xy plane, rotation angles {angle*180/np.pi} deg')
 
-    cor_CoM_rot = rotzyx(cor_CoM, angle, angle,angle)
+    cor_CoM_rot = rotzyx(cor_CoM, 0, angle, angle)
     Fg_rot = calculate_Fg(angle)
     cor_knots = calculate_cor_knots(angle)
     springs = calculate_springs(angle)
     F_fric = calculate_friction_force(angle, pre_tension, c_friction)
+    spring_forces, mags = calculate_spring_forces(angle, pre_tension)
+
+    for i in range(len(spring_forces)):
+        spring_force = spring_forces[i].subs(k, 10)
+        force = np.array([spring_force[0],spring_force[1],spring_force[2]])
+        print(force)
+        plot_vecxyz(xz,yz,xy, cor_knots[i], force, color="green")
+
 
     plot_vecxyz(xz, yz, xy, o_cor, cor_spring_claw)
     plot_vecxyz(xz, yz, xy, o_cor, -cor_spring_claw)
